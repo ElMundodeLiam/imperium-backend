@@ -3,23 +3,22 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Conexión a MongoDB
-const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/imperium';
-mongoose.connect(mongoURI)
-  .then(() => console.log('🟢 Conectado a MongoDB'))
-  .catch((err) => console.error('🔴 Error de conexión:', err));
+// Rutas
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 
-// Ruta de prueba
-app.get('/', (req, res) => {
-  res.send('✅ Imperium backend funcionando');
-});
+// Conexión a MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('🟢 Conectado a MongoDB'))
+  .catch(err => console.error('❌ Error al conectar a MongoDB', err));
 
 // Puerto
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en el puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en el puerto ${PORT}`));
