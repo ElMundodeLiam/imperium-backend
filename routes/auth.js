@@ -1,41 +1,45 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
+// Registro
 router.post('/register', async (req, res) => {
-  const { nombre, email, contraseña } = req.body;
-
   try {
-    const existe = await User.findOne({ email });
-    if (existe) return res.status(400).json({ msg: 'El usuario ya existe' });
+    const { nombre, correo, contraseña } = req.body;
 
-    const hashed = await bcrypt.hash(contraseña, 10);
-    const nuevoUsuario = new User({ nombre, email, contraseña: hashed, saldo: 1000 });
+    const existe = await User.findOne({ correo });
+    if (existe) return res.status(400).json({ mensaje: 'Correo ya registrado' });
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(contraseña, salt);
+
+    const nuevoUsuario = new User({ nombre, correo, contraseña: hash });
     await nuevoUsuario.save();
 
-    res.status(201).json({ msg: 'Usuario creado' });
+    res.status(201).json({ mensaje: 'Usuario registrado con éxito' });
   } catch (err) {
-    res.status(500).json({ error: 'Error del servidor' });
+    res.status(500).json({ mensaje: 'Error en el servidor', error: err });
   }
 });
 
+// Login
 router.post('/login', async (req, res) => {
-  const { email, contraseña } = req.body;
-
   try {
-    const usuario = await User.findOne({ email });
-    if (!usuario) return res.status(404).json({ msg: 'Usuario no encontrado' });
+    const { correo, contraseña } = req.body;
+
+    const usuario = await User.findOne({ correo });
+    if (!usuario) return res.status(400).json({ mensaje: 'Correo no encontrado' });
 
     const esValida = await bcrypt.compare(contraseña, usuario.contraseña);
-    if (!esValida) return res.status(401).json({ msg: 'Contraseña incorrecta' });
+    if (!esValida) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
 
-    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: '3h' });
+    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.json({ token, usuario: { nombre: usuario.nombre, saldo: usuario.saldo } });
+    res.json({ mensaje: 'Login exitoso', token });
   } catch (err) {
-    res.status(500).json({ error: 'Error del servidor' });
+    res.status(500).json({ mensaje: 'Error al iniciar sesión', error: err });
   }
 });
 
