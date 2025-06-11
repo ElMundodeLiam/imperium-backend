@@ -1,45 +1,45 @@
 const express = require('express');
-const router = express.Router();
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+const router = express.Router();
 
 // Registro
 router.post('/register', async (req, res) => {
+  const { username, email, password } = req.body;
+
   try {
-    const { nombre, correo, contraseña } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: 'El usuario ya existe' });
 
-    const existe = await User.findOne({ correo });
-    if (existe) return res.status(400).json({ mensaje: 'Correo ya registrado' });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(contraseña, salt);
+    const user = new User({ username, email, password: hashedPassword });
+    await user.save();
 
-    const nuevoUsuario = new User({ nombre, correo, contraseña: hash });
-    await nuevoUsuario.save();
-
-    res.status(201).json({ mensaje: 'Usuario registrado con éxito' });
+    res.status(201).json({ message: 'Usuario registrado exitosamente' });
   } catch (err) {
-    res.status(500).json({ mensaje: 'Error en el servidor', error: err });
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 });
 
 // Login
 router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const { correo, contraseña } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Credenciales inválidas' });
 
-    const usuario = await User.findOne({ correo });
-    if (!usuario) return res.status(400).json({ mensaje: 'Correo no encontrado' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Credenciales inválidas' });
 
-    const esValida = await bcrypt.compare(contraseña, usuario.contraseña);
-    if (!esValida) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    res.json({ mensaje: 'Login exitoso', token });
+    res.json({ token, user: { id: user._id, username: user.username, balance: user.balance } });
   } catch (err) {
-    res.status(500).json({ mensaje: 'Error al iniciar sesión', error: err });
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 });
 
