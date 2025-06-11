@@ -1,29 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+const verifyToken = require('../middleware/auth');
 const User = require('../models/User');
 
-// Middleware para verificar token
-function verificarToken(req, res, next) {
-  const token = req.header('Authorization');
-  if (!token) return res.status(401).json({ mensaje: 'Acceso denegado' });
-
+// Ruta protegida
+router.get('/dashboard', verifyToken, async (req, res) => {
   try {
-    const verificado = jwt.verify(token, process.env.JWT_SECRET);
-    req.usuario = verificado;
-    next();
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
   } catch (err) {
-    res.status(400).json({ mensaje: 'Token inválido' });
-  }
-}
-
-// Obtener perfil del usuario
-router.get('/perfil', verificarToken, async (req, res) => {
-  try {
-    const usuario = await User.findById(req.usuario.id).select('-contraseña');
-    res.json(usuario);
-  } catch (err) {
-    res.status(500).json({ mensaje: 'Error al obtener perfil', error: err });
+    res.status(500).json({ message: 'Error del servidor' });
   }
 });
 
