@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+
 const router = express.Router();
 
 // Registro
@@ -41,11 +42,11 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-
-    // ✅ Asegúrate de devolver siempre JSON válido
-    return res.status(200).json({ token });
+    res.json({ token });
   } catch (error) {
     console.error('Error en /login:', error);
-    return res.status(500).json({ error: 'Error al iniciar sesión' });
+    res.status(500).json({ error: 'Error al iniciar sesión' });
   }
 });
+
+module.exports = router; // ✅ Esta línea es clave para evitar el error
