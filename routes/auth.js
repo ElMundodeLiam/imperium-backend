@@ -42,18 +42,10 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
 
-    res.status(200).json({
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        balance: user.balance
-      }
-    });
+    // ✅ Asegúrate de devolver siempre JSON válido
+    return res.status(200).json({ token });
   } catch (error) {
     console.error('Error en /login:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión' });
+    return res.status(500).json({ error: 'Error al iniciar sesión' });
   }
 });
-
-module.exports = router;
