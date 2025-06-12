@@ -41,7 +41,15 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-    res.json({ token });
+
+    res.status(200).json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        balance: user.balance
+      }
+    });
   } catch (error) {
     console.error('Error en /login:', error);
     res.status(500).json({ error: 'Error al iniciar sesión' });
