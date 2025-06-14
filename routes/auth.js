@@ -1,51 +1,59 @@
-const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
 const router = express.Router();
 
 // Registro
 router.post('/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const existingUser = await User.findOne({ username });
+    const { name, email, password } = req.body;
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'El usuario ya existe' });
-    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: 'El correo ya está registrado' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, balance: 1000 });
-    await user.save();
+    const newUser = new User({ name, email, password: hashedPassword });
+    await newUser.save();
 
-    res.status(201).json({ message: 'Usuario registrado correctamente' });
-  } catch (error) {
-    console.error('Error en /register:', error);
-    res.status(500).json({ error: 'Error al registrar usuario' });
+    res.status(201).json({ message: 'Usuario registrado exitosamente' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error en el servidor', error: err.message });
   }
 });
 
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const { email, password } = req.body;
 
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
-    }
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(400).json({ message: 'Credenciales inválidas' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
-    }
+    if (!isMatch)
+      return res.status(400).json({ message: 'Credenciales inválidas' });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-    res.json({ token }); // ✅ Devuelve JSON correctamente
-  } catch (error) {
-    console.error('Error en /login:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión' }); // ✅ También aquí
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d',
+    });
+
+    res.status(200).json({
+      message: 'Inicio de sesión exitoso',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        balance: user.balance
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error en el servidor', error: err.message });
   }
 });
 
-module.exports = router;
+export default router;
