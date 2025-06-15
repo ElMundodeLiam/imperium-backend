@@ -1,33 +1,33 @@
-import express from 'express';
-import User from '../models/User.js';
-import jwt from 'jsonwebtoken';
-
+const express = require("express");
 const router = express.Router();
+const authMiddleware = require("../middleware/auth");
+const User = require("../models/User");
 
-// Middleware para proteger rutas
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Token no encontrado' });
-
+// Obtener perfil del usuario autenticado
+router.get("/perfil", authMiddleware, async (req, res) => {
   try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = verified.id;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Token inválido' });
-  }
-};
-
-// Obtener perfil del usuario
-router.get('/profile', verifyToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('-password');
-    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json({ message: 'Error en el servidor', error: err.message });
+    const usuario = await User.findById(req.usuario.id).select("-password");
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al obtener perfil" });
   }
 });
 
-export default router;
+// Obtener datos del usuario autenticado (nombre y saldo)
+router.get("/datos", authMiddleware, async (req, res) => {
+  try {
+    const usuario = await User.findById(req.usuario.id);
+    if (!usuario) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    res.json({
+      nombre: usuario.nombre,
+      saldo: usuario.saldo
+    });
+  } catch (error) {
+    res.status(500).json({ mensaje: "Error al obtener datos del usuario" });
+  }
+});
+
+module.exports = router;
