@@ -1,7 +1,8 @@
-const express = require("express");
+import express from 'express';
+import authMiddleware from '../middleware/auth.js';
+import User from '../models/User.js';
+
 const router = express.Router();
-const authMiddleware = require("../middleware/auth");
-const User = require("../models/User");
 
 // Obtener perfil del usuario autenticado
 router.get("/perfil", authMiddleware, async (req, res) => {
@@ -29,7 +30,5 @@ router.get("/datos", authMiddleware, async (req, res) => {
     res.status(500).json({ mensaje: "Error al obtener datos del usuario" });
   }
 });
-
-module.exports = router;
 
 export default router;
