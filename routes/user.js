@@ -31,3 +31,5 @@ router.get("/datos", authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+
+export default router;
