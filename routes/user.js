@@ -1,3 +1,4 @@
+// backend/routes/user.js
 import express from 'express';
 import authMiddleware from '../middleware/auth.js';
 import User from '../models/User.js';
@@ -17,6 +18,7 @@ router.get("/datos", authMiddleware, async (req, res) => {
       saldo: usuario.saldo
     });
   } catch (error) {
+    console.error("Error al obtener datos:", error);
     res.status(500).json({ mensaje: "Error al obtener datos del usuario" });
   }
 });
