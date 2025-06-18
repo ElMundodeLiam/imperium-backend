@@ -15,7 +15,7 @@ app.use(express.json());
 
 // Rutas
 app.use('/api/auth', authRoutes);
-app.use('/api/usuario', userRoutes);
+app.use('/api/user', userRoutes);
 // Ruta de prueba
 app.get('/', (req, res) => {
   res.send('IMPERIUM CASINO backend funcionando');
