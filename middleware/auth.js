@@ -1,21 +1,19 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
-const authMiddleware = (req, res, next) => {
+export default function (req, res, next) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ mensaje: "Token no proporcionado" });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ mensaje: 'Token no proporcionado' });
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.usuario = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ mensaje: "Token inválido" });
+    return res.status(401).json({ mensaje: 'Token inválido' });
   }
-};
-
-export default authMiddleware;
+}
