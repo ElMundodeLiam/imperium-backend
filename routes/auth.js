@@ -5,54 +5,51 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
-// Registro
+// Registro de usuario
 router.post('/register', async (req, res) => {
+  const { nombre, correo, password } = req.body;
+
   try {
-    const { name, email, password } = req.body;
+    let usuario = await User.findOne({ correo });
+    if (usuario) {
+      return res.status(400).json({ mensaje: 'El correo ya está registrado' });
+    }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: 'El correo ya está registrado' });
+    const nuevoUsuario = new User({ nombre, correo, password });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
+    const salt = await bcrypt.genSalt(10);
+    nuevoUsuario.password = await bcrypt.hash(password, salt);
 
-    res.status(201).json({ message: 'Usuario registrado exitosamente' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error en el servidor', error: err.message });
+    await nuevoUsuario.save();
+
+    res.status(201).json({ mensaje: 'Usuario registrado correctamente' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error en el servidor' });
   }
 });
 
-// Login
+// Login de usuario
 router.post('/login', async (req, res) => {
+  const { correo, password } = req.body;
+
   try {
-    const { email, password } = req.body;
+    const usuario = await User.findOne({ correo });
+    if (!usuario) {
+      return res.status(400).json({ mensaje: 'Credenciales inválidas' });
+    }
 
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(400).json({ message: 'Credenciales inválidas' });
+    const esMatch = await bcrypt.compare(password, usuario.password);
+    if (!esMatch) {
+      return res.status(400).json({ mensaje: 'Credenciales inválidas' });
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: 'Credenciales inválidas' });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, {
       expiresIn: '30d',
     });
 
-    res.status(200).json({
-      message: 'Inicio de sesión exitoso',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        balance: user.balance
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Error en el servidor', error: err.message });
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error en el servidor' });
   }
 });
 
