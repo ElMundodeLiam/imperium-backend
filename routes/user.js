@@ -15,7 +15,6 @@ router.get('/datos', authMiddleware, async (req, res) => {
   }
 });
 // Ruta temporal para ver usuarios y sus IDs (eliminar después)
-import User from '../models/User.js';
 
 router.get('/todos', async (req, res) => {
   try {
