@@ -4,7 +4,7 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
-// Ruta GET: /api/usuario/datos
+// Ruta protegida para obtener datos del usuario
 router.get("/datos", authMiddleware, async (req, res) => {
   try {
     const usuario = await User.findById(req.usuario.id);
