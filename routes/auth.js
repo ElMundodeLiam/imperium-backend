@@ -7,15 +7,15 @@ const router = express.Router();
 
 // Registro de usuario
 router.post('/register', async (req, res) => {
-  const { nombre, correo, password } = req.body;
+  const { name, email, password } = req.body;
 
   try {
-    let usuario = await User.findOne({ correo });
+    let usuario = await User.findOne({ email });
     if (usuario) {
       return res.status(400).json({ mensaje: 'El correo ya está registrado' });
     }
 
-    const nuevoUsuario = new User({ nombre, correo, password });
+    const nuevoUsuario = new User({ name, email, password });
 
     const salt = await bcrypt.genSalt(10);
     nuevoUsuario.password = await bcrypt.hash(password, salt);
@@ -24,16 +24,17 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ mensaje: 'Usuario registrado correctamente' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ mensaje: 'Error en el servidor' });
   }
 });
 
 // Login de usuario
 router.post('/login', async (req, res) => {
-  const { correo, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const usuario = await User.findOne({ correo });
+    const usuario = await User.findOne({ email });
     if (!usuario) {
       return res.status(400).json({ mensaje: 'Credenciales inválidas' });
     }
@@ -49,6 +50,7 @@ router.post('/login', async (req, res) => {
 
     res.json({ token });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ mensaje: 'Error en el servidor' });
   }
 });
